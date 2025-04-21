@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block content %}
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        .profile-container {
+            max-width: 960px;
+            margin: auto;
+            padding: 3rem 1rem;
+        }
+        .profile-picture-wrapper {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin: auto;
+        }
+        .profile-picture-wrapper img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #ddd;
+        }
+        .edit-icon {
+            position: absolute;
+            bottom: 10px;
+            right: 0;
+            left: 110px;
+            background-color: #3c3c3c;
+            color: white;
+            border-radius: 50%;
+            padding: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            border: 2px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+        }
+        .hidden-file-input {
+            display: none;
+        }
+        .form-section {
+            margin-top: 2rem;
+        }
+        .divider {
+            border-top: 1px solid #eaeaea;
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+
+<div class="container profile-container">
+    <div class="card shadow-sm p-4">
+        <div class="row">
+            <!-- Photo de profil -->
+            <div class="col-md-4 text-center">
+                <div class="profile-picture-wrapper">
+                        <img id="profile-preview" src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}{% static 'images/user.jpg' %}{% endif %}" alt="Photo de profil">
+                    <label for="id_profile_image" class="edit-icon">
+                        <i class="bi bi-camera-fill"></i>
+                    </label>
+                    <input type="file" name="profile_picture" id="id_profile_image" class="hidden-file-input" form="profile-form">
+                </div>
+            </div>
+
+            <!-- Formulaires -->
+            <div class="col-md-8">
+                <h3 class="mb-4">Modifier mon profil</h3>
+
+                <!-- Formulaire d'informations utilisateur -->
+                <form method="post" enctype="multipart/form-data" id="profile-form">
+                    {% csrf_token %}
+
+                    <!-- Username -->
+                    <div class="mb-3">
+                        {{ user_form.username.label_tag }}
+                        {% if user_form.username.errors %}
+                            {{ user_form.username|add_class:"form-control is-invalid" }}
+                            {% for error in user_form.username.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        {% else %}
+                            {{ user_form.username|add_class:"form-control" }}
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        {{ user_form.email.label_tag }}
+                        {% if user_form.email.errors %}
+                            {{ user_form.email|add_class:"form-control is-invalid" }}
+                            {% for error in user_form.email.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        {% else %}
+                            {{ user_form.email|add_class:"form-control" }}
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" name="update_profile" class="btn btn-primary w-100">
+                        <i class="bi bi-check-circle me-1"></i> Enregistrer
+                    </button>
+                </form>
+
+                <div class="divider"></div>
+
+                <!-- Bouton pour afficher le formulaire de mot de passe -->
+                <button class="btn btn-outline-danger w-100 {% if password_form.errors %}d-none{% endif %}" id="show-password-form">
+                    <i class="bi bi-lock-fill me-1"></i> Changer le mot de passe
+                </button>
+
+                <!-- Formulaire de mot de passe masqué par défaut -->
+                <form method="post" id="password-form" class="form-section {% if password_form.errors %}d-block{% else %}d-none{% endif %}">
+                    {% csrf_token %}
+
+                    {% if password_form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ password_form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <!-- Ancien mot de passe -->
+                    <div class="mb-3">
+                        {{ password_form.old_password.label_tag }}
+                        {% if password_form.old_password.errors %}
+                            {{ password_form.old_password|add_class:"form-control is-invalid" }}
+                            {% for error in password_form.old_password.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        {% else %}
+                            {{ password_form.old_password|add_class:"form-control" }}
+                        {% endif %}
+                    </div>
+
+                    <!-- Nouveau mot de passe -->
+                    <div class="mb-3">
+                        {{ password_form.new_password1.label_tag }}
+                        {% if password_form.new_password1.errors %}
+                            {{ password_form.new_password1|add_class:"form-control is-invalid" }}
+                            {% for error in password_form.new_password1.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        {% else %}
+                            {{ password_form.new_password1|add_class:"form-control" }}
+                        {% endif %}
+                    </div>
+
+                    <!-- Confirmation mot de passe -->
+                    <div class="mb-3">
+                        {{ password_form.new_password2.label_tag }}
+                        {% if password_form.new_password2.errors %}
+                            {{ password_form.new_password2|add_class:"form-control is-invalid" }}
+                            {% for error in password_form.new_password2.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        {% else %}
+                            {{ password_form.new_password2|add_class:"form-control" }}
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" name="change_password" class="btn btn-danger w-100">
+                        <i class="bi bi-check2-all me-1"></i> Confirmer le changement de mot de passe
+                    </button>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} mt-3">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('show-password-form').addEventListener('click', function () {
+        document.getElementById('password-form').classList.remove('d-none');
+        this.classList.add('d-none');
+    });
+
+    const fileInput = document.getElementById("id_profile_image");
+    const profilePreview = document.getElementById("profile-preview");
+
+    fileInput.addEventListener("change", function () {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                profilePreview.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+{% endblock %}

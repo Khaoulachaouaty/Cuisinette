@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <div class="container">
+        <h2 class="category-title">Sous-catégories de {{ category.name }}</h2>
+
+        <div class="row">
+            {% for subcategory in subcategories %}
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-lg border-0 rounded">
+                        <!-- Image avec effet de survol -->
+                        <div class="image-container">
+                            <img src="{{ subcategory.image.url }}" class="card-img-top rounded-top" alt="{{ subcategory.name }}">
+                            <div class="overlay">
+                                <h3 class="text-white">
+                                    <a href="{% url 'recipe_list_by_subcategory' subcategory.id %}">{{ subcategory.name }}</a>
+                                </h3>
+                            <p class="text-white">Découvrez toutes les recettes de {{ subcategory.name }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p>Aucune sous-catégorie disponible.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+{% endblock %}

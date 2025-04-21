@@ -1,0 +1,331 @@
+/* --- Slideshow (Diaporama) --- */
+.hero {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.slideshow {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.slide {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+}
+
+.slide.active {
+    opacity: 1;
+}
+
+/* --- Overlay sombre --- */
+.hero::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6); /* Ombre sombre pour améliorer la lisibilité */
+    z-index: 1;
+}
+
+/* --- Texte sur le diaporama --- */
+.hero-content {
+    position: relative;
+    z-index: 2;
+    color: white;
+    font-family: 'Poppins', sans-serif;
+    text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8); /* Ombre pour le texte */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.hero-content h1 {
+    font-size: 3rem;
+    font-weight: bold;
+    background: -webkit-linear-gradient(45deg, #957c7c, #f1efee); /* Dégradé pour le titre */
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-content p {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    max-width: 800px;
+}
+
+/* --- Navbar --- */
+.navbar {
+    background: linear-gradient(45deg, #030303, #1e1c1c); /* Dégradé sombre pour la navbar */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3); /* Ombre portée pour la navbar */
+    padding: 0px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+/* Liens de la Navbar */
+.navbar .nav-link {
+    font-size: 1rem;
+    color: white; /* Couleur claire pour les liens */
+    padding: 12px 18px;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+/* Effet de survol des liens */
+.navbar .nav-link:hover {
+    color: #ffb47e; /* Couleur dorée au survol */
+    transform: translateY(-3px);
+}
+
+/* Lien Connexion avec effet de mise en valeur */
+.navbar .nav-item .nav-link.connexion {
+    font-weight: bold;
+}
+
+/* Lien Inscription personnalisé avec bordure et effet de survol */
+.navbar .nav-item .nav-link.inscription {
+    border: 2px solid white; /* Bordure blanche */
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+/* Effet de survol du lien Inscription */
+.navbar .nav-item .nav-link.inscription:hover {
+    background-color: rgb(211, 134, 40); /* Couleur orange au survol */
+    color: #333; /* Texte sombre */
+    transform: scale(1.1);
+}
+
+/* Effet sur les éléments de la navbar */
+.navbar .nav-item:hover {
+    transform: translateY(-2px); /* Effet d'élévation au survol */
+    transition: transform 0.3s ease-in-out;
+}
+
+/* --- Navbar responsive (adaptation pour petits écrans) --- */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        align-items: center; /* Centrer les éléments pour les petits écrans */
+    }
+
+    .navbar .nav-link {
+        margin-bottom: 10px;
+    }
+}
+
+/* --- Boutons --- */
+.btn-custom, .btn-primary-custom {
+    font-size: 1.1rem;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: all 0.3s ease-in-out;
+    margin: 10px;
+}
+
+/* Bouton principal personnalisé avec dégradé et ombre */
+.btn-primary-custom {
+    background: linear-gradient(45deg, #917e7e, #5c5555); /* Dégradé de gris */
+    color: white;
+    border: none;
+    letter-spacing: 1px;
+    box-shadow: 0px 4px 8px rgba(26, 15, 15, 0.3);
+}
+
+/* Effet au survol du bouton principal */
+.btn-primary-custom:hover {
+    background: linear-gradient(45deg, #c5b0b0, rgb(143, 132, 130)); /* Changement de couleur au survol */
+    transform: scale(1.05);
+    box-shadow: 0px 6px 12px rgba(35, 33, 33, 0.4);
+}
+
+/* Effet au clic du bouton principal */
+.btn-primary-custom:active {
+    transform: scale(0.98);
+    background: #b19691; /* Couleur orange au clic */
+}
+
+/* Bouton secondaire avec bordure transparente */
+.btn-custom {
+    padding: 10px 22px;
+    border: 2px solid white; /* Bordure blanche */
+    color: white;
+    background: transparent; /* Fond transparent */
+    letter-spacing: 1px;
+}
+
+/* Effet au survol du bouton secondaire */
+.btn-custom:hover {
+    background: rgb(226, 206, 206); /* Couleur grise claire */
+    color: #342d2d; /* Texte sombre */
+    transform: scale(1.01);
+    box-shadow: 0px 2px 2px rgba(255, 255, 255, 0.3);
+}
+
+/* Effet au clic du bouton secondaire */
+.btn-custom:active {
+    transform: scale(0.98);
+    background: #3684d3; /* Couleur bleue au clic */
+}
+
+/* --- Logo --- */
+.navbar .navbar-brand {
+    font-size: 1.7rem; /* Taille du logo */
+    font-weight: bold;
+    color: #ffffff; /* Couleur de base pour le texte */
+    text-transform: uppercase; /* Met le texte en majuscules */
+    letter-spacing: 2px; /* Espacement des lettres */
+    display: flex;
+    align-items: center; /* Aligne verticalement l'emoji avec le texte */
+    transition: all 0.3s ease; /* Transition douce pour les effets */
+    background: linear-gradient(45deg, #f5f3f2, #7e6060, #dddcd5); /* Dégradé de couleurs pour le texte */
+    -webkit-background-clip: text; /* Applique le dégradé au texte uniquement */
+    color: transparent; /* Rend le texte transparent pour que le dégradé soit visible */
+}
+
+.navbar .navbar-brand .emoji {
+    font-size: 2rem; /* Taille de l'emoji */
+    margin-right: 10px; /* Espacement entre l'emoji et le texte */
+    transition: transform 0.3s ease, color 0.3s ease; /* Transition pour un effet au survol de l'emoji */
+    color: #ff6347; /* Couleur initiale de l'emoji */
+}
+
+/* Effet de changement de couleur pour l'emoji au survol */
+.navbar .navbar-brand:hover .emoji {
+    color: #ffeb3b; /* L'emoji devient jaune au survol */
+    transform: rotate(15deg); /* L'emoji tourne légèrement au survol */
+}
+
+/* --- Effet au survol du logo --- */
+.navbar .navbar-brand:hover {
+    transform: scale(1.05); /* Agrandissement du logo au survol */
+}
+
+/* --- Logo responsive --- */
+@media (max-width: 768px) {
+    .navbar .navbar-brand {
+        font-size: 1.5rem; /* Taille réduite pour les petits écrans */
+    }
+
+    .navbar .navbar-brand .emoji {
+        font-size: 1.5rem; /* Réduit la taille de l'emoji pour les petits écrans */
+    }
+}
+
+
+/* Categorie */
+
+/* Conteneur de l'image avec un zoom fluide et arrondi */
+.image-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    margin-bottom: 0px;  /* Ajout de l'espace sous chaque carte */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);  /* Légère ombre autour de l'image */
+    height: 250px;  /* Réduction de la hauteur du conteneur pour mieux s'adapter */
+    width: 100%;  /* Largeur à 100% pour prendre tout l'espace disponible */
+}
+
+/* Image avec ajustement */
+.image-container img {
+    width: 100%;
+    height: 100%;  /* Hauteur ajustée à 100% du conteneur */
+    object-fit: cover;  /* L'image couvre l'espace sans déformation */
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Effet de zoom sur l'image au survol */
+.image-container:hover img {
+    transform: scale(1.1);  /* Zoom léger au survol */
+}
+
+/* Overlay avec fond sombre et texte centré */
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);  /* Ombre noire semi-transparente */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.5s ease;  /* Transition pour le fondu */
+    padding: 10px;
+}
+
+/* Afficher l'overlay au survol */
+.image-container:hover .overlay {
+    opacity: 1;
+}
+
+/* Style du texte dans l'overlay */
+.overlay h5,
+.overlay p {
+    margin: 5px 0;  /* Espace entre titre et description */
+    color: #fff;
+    font-size: 1.2em;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);  /* Ombre portée pour le texte */
+}
+
+/* Effet de survol sur le bouton */
+.card-body .btn:hover {
+    background-color: #0056b3;  /* Changer la couleur du bouton au survol */
+    transform: scale(1.05);  /* Légère augmentation du bouton */
+    transition: transform 0.2s ease;  /* Transition pour l'effet sur le bouton */
+}
+
+/* Style pour le titre des catégories */
+.category-title {
+    font-family: 'Poppins', sans-serif;  /* Police moderne et élégante */
+    font-size: 2.5em;  /* Taille du texte plus grande pour un meilleur impact */
+    color: #392222;  /* Couleur sombre pour un contraste agréable */
+    text-align: left;  /* Centrer le texte */
+    font-weight: 600;  /* Police plus épaisse pour plus de visibilité */
+    margin-bottom: 10px;  /* Espace sous le titre */
+    padding: 10px 0;
+    letter-spacing: 2px;  /* Espacement des lettres pour un effet aérien */
+
+    border-radius: 8px;  /* Coins arrondis pour un design plus doux */
+}
+
+
+.content-section {
+    background-color: #f4f4f4;  /* Fond clair */
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.content-section {
+    background-color: #f4f4f4;  /* Fond clair */
+    background-size: cover;  /* Adapter l'image à la taille */
+    background-position: center; /* Centrer l'image */
+    padding: 20px;
+    border-radius: 8px;
+    color: #333;  /* Couleur du texte pour contraster avec le fond */
+}
+
+

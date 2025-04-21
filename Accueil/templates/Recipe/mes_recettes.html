@@ -1,0 +1,863 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<head>
+    <!-- Lien vers le CSS de Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+
+    <style>
+        .profile-header {
+            display: flex;
+            align-items: center;
+            padding: 30px;
+            gap: 20px;
+        }
+
+        .stats {
+            font-size: 1.2rem;
+        }
+
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .recipe-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        
+        .recipe-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 10px;
+        cursor: pointer;
+        }
+
+        .recipe-card img {
+            transition: 0.3s ease-in-out;
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .recipe-card:hover img {
+            filter: blur(4px) brightness(70%);
+            transform: scale(1.05);
+        }
+
+        .recipe-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center; /* Centrer horizontalement */
+        align-items: center;     /* Centrer verticalement */
+        color: white;
+        font-size: 1.2rem;
+        font-weight: bold;
+        background-color: rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+        z-index: 2;
+        text-align: center;
+        padding: 8px 12px;
+        }
+
+        .recipe-card:hover .recipe-overlay {
+            opacity: 1;
+        }
+
+
+        .dropdown {
+            z-index: 3; /* pour que les 3 points restent visibles */
+        }
+        
+        /* Fixer l'image à gauche et permettre à la colonne droite de défiler */
+        .modal-body.image-modal {
+            display: flex;
+            height: 600px;
+            overflow-y: auto;
+        }
+
+        /* Colonne droite (contenu textuel) */
+        .modal-body .col-md-6:last-child {
+            flex-grow: 1; /* La colonne droite prend tout l'espace restant */
+            overflow-y: auto; /* Permet à cette colonne de défiler */
+            padding-left: 20px;
+        }
+
+        /* Fixer l'image dans la colonne gauche */
+        .modal-body .col-md-6:first-child img {
+            width: 100%; /* Image prend toute la largeur de la colonne */
+            height: 100%; /* Image prend toute la hauteur de la colonne */
+            object-fit: cover; /* L'image s'adapte à la taille */
+        }
+
+        .custom-modal {
+            max-width: 70%;  /* Ajuste la largeur du modal (ex : 85% de la largeur de l'écran) */
+        }
+
+    </style>
+</head>
+<body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <div class="container">
+  <div class="profile-header">
+    <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}{% static 'images/user.jpg' %}{% endif %}"
+         alt="Avatar"
+         class="me-2"
+         style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #ccc;">
+    <div>
+        <h2>{{ user.username }}</h2>
+        <div class="stats">
+            <span><strong>{{ total_posts }}</strong> publications</span> |
+            <span><strong>{{ total_likes }}</strong> likes reçus</span> |
+            <span><strong>{{ total_favorites }}</strong> favoris</span>
+        </div>
+    </div>
+  </div>
+
+        <!-- Bouton Statistiques -->
+        <a href="{% url 'statistiques' %}" class="btn btn-outline-primary" style="position: absolute; top: 100px; right: 90px;" >
+            <i class="bi bi-bar-chart-line-fill"></i> Statistiques
+        </a>
+    
+        <!-- Bouton pour ouvrir la modale d'ajout -->
+        <button type="button" class="btn btn-success mb-4" data-bs-toggle="modal" data-bs-target="#ajouterModal" style="position: absolute; top: 200px; right: 90px;">
+            Ajouter une recette
+        </button>
+        </div>
+
+        <hr>
+
+        <!-- Modal Ajouter Recette -->
+        <div class="modal fade" id="ajouterModal" tabindex="-1" aria-labelledby="ajouterModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content shadow-lg border-0">
+                    <form method="post" action="{% url 'ajouter_recette' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title fw-bold" id="ajouterModalLabel">
+                                <i class="bi bi-plus-circle me-2"></i>Ajouter une nouvelle recette
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="title" class="form-label fw-semibold">Titre de la recette</label>
+                                    <input type="text" class="form-control" id="title" name="title" required>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="category" class="form-label fw-semibold">Catégorie</label>
+                                    <select class="form-select" id="category" name="category" required>
+                                        <option value="" disabled selected>Choisir une catégorie</option>
+                                        {% for category in categories %}
+                                            <option value="{{ category.id }}">{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-12">
+                                    <label for="description" class="form-label fw-semibold">Description</label>
+                                    <textarea class="form-control" id="description" name="description" rows="2" required></textarea>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="ingredients" class="form-label fw-semibold">Ingrédients</label>
+                                    <textarea class="form-control" id="ingredients" name="ingredients" rows="4" required></textarea>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="instructions" class="form-label fw-semibold">Instructions</label>
+                                    <textarea class="form-control" id="instructions" name="instructions" rows="4" required></textarea>
+                                </div>
+
+                                <div class="col-12">
+                                    <label for="image" class="form-label fw-semibold">Image</label>
+                                    <input type="file" class="form-control" id="image" name="image" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle"></i> Annuler
+                            </button>
+                            <button type="submit" name="action" value="ajouter" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Ajouter la recette
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="container my-4">
+            <div class="row g-4">
+                {% for recette, form in forms %}
+                <div class="col-sm-12 col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm recipe-card position-relative">
+                
+                        <!-- Menu 3 points -->
+                        <div class="dropdown position-absolute top-0 end-0 m-2">
+                            <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                &#x22EE;
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modifierModal{{ recette.id }}">
+                                        ✏️ Modifier
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ recette.id }}">
+                                        🗑️ Supprimer
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                
+                        <!-- Image -->
+                        <div class="position-relative" data-bs-toggle="modal" data-bs-target="#recipeModal{{ recette.id }}" style="cursor: pointer;">
+                            <img src="{{ recette.image.url }}" alt="{{ recette.title }}" class="card-img-top" style="height: 250px; object-fit: cover;">
+                        
+                            <div class="recipe-overlay d-flex align-items-center gap-3 position-absolute bottom-0 start-0 m-2">
+                                <span class="text-white d-flex align-items-center gap-1">
+                                    <i class="fa-regular fa-thumbs-up"></i> {{ recette.likes.count }}
+                                </span>
+                                <span class="text-white d-flex align-items-center gap-1">
+                                    <i class="fa-regular fa-comment"></i> {{ recette.comments.count }}
+                                </span>
+                            </div>
+                        </div>
+                
+                        
+                        <!-- Contenu de la carte -->
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">{{ recette.title }}</h5>
+                            <p class="mb-1">⭐ {{ recette.avg_rating|default:"0"|floatformat:1 }}</p>
+
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Modal Détails de la recette -->
+                <div class="modal fade" id="recipeModal{{ recette.id }}" tabindex="-1" aria-labelledby="recipeModalLabel{{ recette.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered custom-modal">
+                        <div class="modal-content border-0 rounded-3 overflow-hidden shadow-lg">
+                            <div class="modal-body image-modal p-0 d-flex">
+                
+                                <!-- Image à gauche -->
+                                <div class="col-md-5 position-relative" style="overflow: hidden;">
+                                    {% if recette.image %}
+                                        <img src="{{ recette.image.url }}" class="img-fluid w-100 h-100" style="object-fit: cover;">
+                                    {% endif %}
+                                    <div class="position-absolute top-0 end-0 p-2">
+                                        <button class="btn fav-btn text-light" data-recipe="{{ recette.id }}" style="background: rgba(0,0,0,0.5); border-radius: 50%;">
+                                            <i class="fas fa-heart {% if recette.is_favorite %}text-danger{% endif %}" style="font-size: 1.2rem;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                
+                                <!-- Détails à droite -->
+                                <div class="col-md-7 d-flex flex-column" style="overflow-y: auto;">
+                                    <div class="modal-header">
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer" onclick="window.location.href = '{% url 'mes_recettes' %}';"></button>
+                                    </div>
+                
+                                    <div class="p-4 flex-grow-1">
+                                        <!-- Titre + Date -->
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h5 class="fw-bold mb-0">{{ recette.title }}</h5>
+                                            <small class="text-muted"><i class="fas fa-calendar-alt"></i> {{ recette.created_at|date:"d M Y" }}</small>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-3">
+                                            <img src="{% if recette.author.profile_picture %}{{ recette.author.profile_picture.url }}{% else %}{% static 'images/user.jpg' %}{% endif %}" alt="Avatar" class="rounded-circle me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                            <p class="text-muted large mb-0"><strong>{{ recette.author }}</strong></p>
+                                        </div>
+                                                        
+                                        <!-- Catégorie + Note -->
+                                        <div class="d-flex align-items-center mb-3">
+                                            <span class="badge bg-success me-2">{{ recette.category }}</span>
+                                            <span class="text-warning" id="avg-rating-{{ recette.id }}" style="cursor:pointer;" onclick="openRatingCard({{ recette.id }})">
+                                                <i class="fas fa-star"></i> {{ recette.avg_rating|default:"0"|floatformat:1 }}
+                                            </span>
+                                            
+                                            <!-- 📦 Modal -->
+                                            <div id="rating-card-{{ recette.id }}" class="rating-card" style="display:none; position:fixed; top:30%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.3); z-index:999; width:300px; text-align:center;">
+                                                <h5 style="margin-bottom:15px;">Donner une note</h5>
+                                                
+                                                <div class="stars" data-recipe="{{ recette.id }}">
+                                                    {% for i in "12345" %}
+                                                        <i class="fas fa-star star" 
+                                                           data-value="{{ forloop.counter }}" 
+                                                           style="cursor:pointer; font-size:24px; color:#ccc; margin:5px;">
+                                                        </i>
+                                                    {% endfor %}
+                                                </div>
+                                            
+                                                <!-- ✅ Message de succès -->
+                                                <p id="rating-message-{{ recette.id }}" style="color:green; margin-top:10px; display:none;"></p>
+                                            
+                                                <!-- ❌ Bouton Fermer -->
+                                                <button id="close-btn-{{ recette.id }}" style="display:none; margin-top:15px; padding:5px 15px; border:none; background:#eee; border-radius:5px; cursor:pointer;" onclick="closeRatingCard({{ recette.id }})">Fermer</button>
+                                            </div>                                        </div>
+                
+                                        <!-- Description -->
+                                        <h6 class="text-dark fw-semibold"><i class="fas fa-info-circle"></i> Description :</h6>
+                                        <p class="small text-secondary">{{ recette.description }}</p>
+                
+                                        <!-- Ingrédients -->
+                                        <h6 class="text-dark fw-semibold"><i class="fas fa-utensils"></i> Ingrédients :</h6>
+                                        <ul class="small text-secondary">
+                                            {% for ingredient in recette.ingredients.splitlines %}
+                                                <li>{{ ingredient }}</li>
+                                            {% endfor %}
+                                        </ul>
+                
+                                        <!-- Instructions -->
+                                        <h6 class="text-dark fw-semibold"><i class="fas fa-clipboard-list"></i> Instructions :</h6>
+                                        <ol class="small text-secondary">
+                                            {% for instruction in recette.instructions.splitlines %}
+                                                <li>{{ instruction }}</li>
+                                            {% endfor %}
+                                        </ol>
+                
+                                        <hr>
+                
+                                        <!-- Likes et Commentaires -->
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <button class="btn like-btn p-0 text-muted" 
+                                                    data-recipe="{{ recette.id }}" 
+                                                    data-url="{% url 'toggle_like' recette.id %}" 
+                                                    style="border: none; background: none;">
+                                                <i class="fas fa-thumbs-up {% if request.user in recette.likes.all %} text-primary {% endif %}" style="font-size: 1.2rem;"></i> 
+                                                <span class="like-count">{{ recette.likes.count }}</span>
+                                            </button>                    
+                                            <small class="text-muted"><i class="fas fa-comments"></i> {{ recette.comments.count }} Commentaires</small>
+                                        </div>
+                
+                                        <hr>
+                
+                                        <!-- Commentaires -->
+                                        <div class="comments-section" data-recipe="{{ recette.id }}" style="max-height: 200px; overflow-y: auto;">
+                                            {% for comment in recette.comments.all %}
+                                                <div class="d-flex align-items-start mb-3" id="comment-{{ comment.id }}">
+                                                    <img src="{% if comment.user.profile_picture %}{{ comment.user.profile_picture.url }}{% else %}{% static 'images/user.jpg' %}{% endif %}" alt="Avatar" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                                    <div style="flex-grow: 1;">
+                                                        <strong class="d-block fs-6">{{ comment.user.username }}</strong>
+                                                        <p class="mb-2" id="comment-content-{{ comment.id }}">{{ comment.content }}</p>
+                                                        <small class="text-muted" style="font-size: 0.75rem;">{{ comment.created_at|date:"d M Y, H:i" }}</small>
+
+                                                        {% if comment.user == request.user %}
+                                                            <div class="d-flex justify-content-end mt-2">
+                                                                <button class="btn btn-outline-warning btn-sm me-2" onclick="editComment({{ comment.id }})">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </button>
+                                                                <button class="btn btn-outline-danger btn-sm" onclick="deleteComment({{ comment.id }})">
+                                                                    <i class="fas fa-trash-alt"></i>
+                                                                </button>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                
+                                        <!-- Ajouter un commentaire -->
+                                        <form class="add-comment-form mt-2 d-flex" data-recipe="{{ recette.id }}" method="POST">
+                                            {% csrf_token %}
+                                            <input type="text" class="form-control comment-input me-2" placeholder="Ajouter un commentaire..." required>
+                                            <button class="btn btn-success add-comment-btn" type="submit">Envoyer</button>
+                                        </form>
+                                    </div>
+                                </div>
+                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                
+                <!-- Modal Modifier Recette -->
+                <div class="modal fade" id="modifierModal{{ recette.id }}" tabindex="-1" aria-labelledby="modifierModalLabel{{ recette.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content shadow-lg border-0">
+                            <form method="post" action="{% url 'mes_recettes' %}" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="modal-header bg-dark  text-white">
+                                    <h5 class="modal-title fw-bold" id="modifierModalLabel{{ recette.id }}">
+                                        <i class="bi bi-pencil-square me-2"></i>Modifier la recette : {{ recette.title }}
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="title_{{ recette.id }}" class="form-label fw-semibold">Titre de la recette</label>
+                                            <input type="text" class="form-control" id="title_{{ recette.id }}" name="title" value="{{ recette.title }}" required>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="category_{{ recette.id }}" class="form-label fw-semibold">Catégorie</label>
+                                            <select class="form-select" id="category_{{ recette.id }}" name="category" required>
+                                                {% for category in categories %}
+                                                    <option value="{{ category.id }}" {% if recette.category.id == category.id %}selected{% endif %}>
+                                                        {{ category.name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label for="description_{{ recette.id }}" class="form-label fw-semibold">Description</label>
+                                            <textarea class="form-control" id="description_{{ recette.id }}" name="description" rows="2" required>{{ recette.description }}</textarea>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="ingredients_{{ recette.id }}" class="form-label fw-semibold">Ingrédients</label>
+                                            <textarea class="form-control" id="ingredients_{{ recette.id }}" name="ingredients" rows="4" required>{{ recette.ingredients }}</textarea>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="instructions_{{ recette.id }}" class="form-label fw-semibold">Instructions</label>
+                                            <textarea class="form-control" id="instructions_{{ recette.id }}" name="instructions" rows="4" required>{{ recette.instructions }}</textarea>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label for="image_{{ recette.id }}" class="form-label fw-semibold">Changer l'image</label>
+
+                                            <!-- Champ pour télécharger une nouvelle image -->
+                                            <input type="file" class="form-control" id="image_{{ recette.id }}" name="image" accept="image/*">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                        <i class="bi bi-x-circle"></i> Annuler
+                                    </button>
+                                    <button type="submit" name="action" value="modifier" class="btn btn-dark  ">
+                                        <i class="bi bi-check-circle"></i> Enregistrer les modifications
+                                    </button>
+                                </div>
+                                <input type="hidden" name="recette_id" value="{{ recette.id }}">
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Confirmation Suppression -->
+                <div class="modal fade" id="confirmDeleteModal{{ recette.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ recette.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="border-radius: 15px; box-shadow: 0 0 15px rgba(0,0,0,0.2); max-width: 500px;">
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="recette_id" value="{{ recette.id }}">
+                                
+                                <div class="modal-header border-0 py-2">
+                                    <h5 class="modal-title fw-bold text-danger d-flex align-items-center gap-2" id="confirmDeleteLabel{{ recette.id }}">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> Confirmation de suppression
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                                </div>
+                                
+                                <div class="modal-body text-center py-1">
+                                    <p class="mb-2">Voulez-vous vraiment supprimer la recette suivante ?</p>
+                                    <h6 class="fw-bold text-dark fst-italic mb-0">« {{ recette.title }} »</h6>
+                                </div>
+                                
+                                <div class="modal-footer border-0 justify-content-center pt-2 pb-3">
+                                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Annuler</button>
+                                    <button type="submit" name="action" value="supprimer" class="btn btn-danger px-4">Supprimer</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                
+                
+                {% endfor %}
+            </div>
+        </div>
+        
+        
+    </div>
+    <script>
+        document.querySelectorAll('.dropdown').forEach(dropdown => {
+            dropdown.addEventListener('click', function(event) {
+                event.stopPropagation(); // Empêche la propagation au div parent qui déclenche l'ouverture du modal
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".like-btn").forEach(button => {
+                button.addEventListener("click", function () {
+                    let recipeId = this.getAttribute("data-recipe");
+                    let url = this.getAttribute("data-url");
+                    let icon = this.querySelector("i");
+                    let likeCount = this.querySelector(".like-count");
+        
+                    fetch(url, {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": getCookie("csrftoken"),
+                            "X-Requested-With": "XMLHttpRequest"
+                        },
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.liked) {
+                            icon.classList.add("text-primary");  // Ajoute la couleur bleue
+                        } else {
+                            icon.classList.remove("text-primary");  // Retire la couleur bleue
+                        }
+                        likeCount.textContent = data.likes_count;
+                    })
+                    .catch(error => console.error("Erreur:", error));
+                });
+            });
+        
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    let cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        let cookie = cookies[i].trim();
+                        if (cookie.startsWith(name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+        });
+    </script>
+        
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".add-comment-form").forEach(form => {
+            form.addEventListener("submit", function (event) {
+                event.preventDefault(); // Empêche le rechargement de la page
+                
+                let recipeId = this.getAttribute("data-recipe");
+                let commentText = this.querySelector(".comment-input").value.trim();
+                let csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+                if (!commentText) {
+                    alert("Le commentaire ne peut pas être vide.");
+                    return;
+                }
+
+                fetch(`/add-comment/${recipeId}/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": csrfToken,
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: `comment=${encodeURIComponent(commentText)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let commentsSection = document.querySelector(`.comments-section[data-recipe="${recipeId}"]`);
+                        commentsSection.innerHTML = ''; // Réinitialiser la section des commentaires
+
+                        data.comments.forEach(comment => {
+                            let newComment = document.createElement("div");
+                            newComment.classList.add("d-flex", "align-items-start", "mb-3", "justify-content-between");
+                            newComment.id = `comment-${comment.id}`;
+
+                            newComment.innerHTML = `
+                                <div class="d-flex">
+                                    <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}{% static 'images/user.jpg' %}{% endif %}" alt="Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                    <div>
+                                        <strong class="d-block">${comment.user}</strong>
+                                        <small class="text-muted">${comment.created_at}</small>
+                                        <p class="mb-0" id="comment-content-${comment.id}">${comment.content}</p>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    ${comment.user === data.currentUser ? `
+                                        <button class="btn btn-outline-warning btn-sm me-2" onclick="editComment(${comment.id})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger btn-sm" onclick="deleteComment(${comment.id})">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            `;
+
+                            commentsSection.appendChild(newComment);
+                        });
+
+                        // Vider le champ de saisie sans fermer le formulaire
+                        this.querySelector(".comment-input").value = "";
+                    } else {
+                        alert("Erreur lors de l'ajout du commentaire.");
+                    }
+                })
+                .catch(error => console.error("❌ Erreur Fetch:", error));
+            });
+        });
+    });
+
+    // Fonction pour modifier un commentaire
+    function editComment(commentId) {
+        let commentContent = document.getElementById(`comment-content-${commentId}`);
+        let currentContent = commentContent.innerText;
+
+        // Crée un champ de saisie pour modifier le commentaire
+        commentContent.innerHTML = `
+            <textarea id="edit-text-${commentId}" class="form-control" rows="3">${currentContent}</textarea>
+            <div class="d-flex justify-content-end mt-2">
+                <button class="btn btn-success btn-sm me-2" onclick="saveComment(${commentId})">
+                    <i class="fas fa-check"></i> 
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="cancelEdit(${commentId})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    // Fonction pour annuler l'édition
+    function cancelEdit(commentId) {
+        let commentContent = document.getElementById(`comment-content-${commentId}`);
+        let originalContent = commentContent.dataset.originalContent;
+        commentContent.innerHTML = originalContent;
+    }
+
+    // Fonction pour sauvegarder l'édition
+    function saveComment(commentId) {
+        let newContent = document.getElementById(`edit-text-${commentId}`).value.trim();
+        if (!newContent) {
+            alert("Le commentaire ne peut pas être vide.");
+            return;
+        }
+
+        let csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+        fetch(`/edit-comment/${commentId}/`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `comment=${encodeURIComponent(newContent)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let commentContent = document.getElementById(`comment-content-${commentId}`);
+                commentContent.innerHTML = newContent;  // Met à jour le commentaire affiché
+            } else {
+                alert("Erreur lors de l'édition du commentaire.");
+            }
+        })
+        .catch(error => console.error("Erreur Fetch:", error));
+    }
+
+    // Fonction pour supprimer un commentaire
+    function deleteComment(commentId) {
+        let csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+        if (confirm("Êtes-vous sûr de vouloir supprimer ce commentaire ?")) {
+            fetch(`/delete-comment/${commentId}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrfToken,
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let commentElement = document.getElementById(`comment-${commentId}`);
+                    commentElement.remove();  // Supprime le commentaire de l'interface
+                } else {
+                    alert("Erreur lors de la suppression du commentaire.");
+                }
+            })
+            .catch(error => console.error("Erreur Fetch:", error));
+        }
+    }
+
+
+    </script>   
+    
+    <script>
+    function openRatingCard(recipeId) {
+        // Ouvrir le modal
+        document.getElementById(`rating-card-${recipeId}`).style.display = 'block';
+        
+        // Masquer le message précédent
+        document.getElementById(`rating-message-${recipeId}`).style.display = 'none';
+
+        // Récupérer la note précédente donnée par l'utilisateur (si elle existe)
+        fetch(`/get-user-rating/${recipeId}/`)
+            .then(response => response.json())
+            .then(data => {
+                const stars = document.querySelectorAll(`#rating-card-${recipeId} .star`);
+                if (data.rating) {
+                    stars.forEach(star => {
+                        if (parseInt(star.dataset.value) <= data.rating) {
+                            star.style.color = '#f39c12'; // Couleur des étoiles sélectionnées
+                        } else {
+                            star.style.color = '#ccc'; // Couleur des autres étoiles
+                        }
+                    });
+                } else {
+                    stars.forEach(star => {
+                        star.style.color = '#ccc'; // Par défaut les étoiles sont grises
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("Erreur lors du chargement de la note utilisateur :", error);
+            });
+    }
+
+    function closeRatingCard(recipeId) {
+        // Fermer le modal
+        document.getElementById(`rating-card-${recipeId}`).style.display = 'none';
+    
+        // Rafraîchir la moyenne mise à jour via AJAX
+        fetch(`/get-avg-rating/${recipeId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.avg_rating !== undefined) {
+                    const span = document.getElementById(`avg-rating-${recipeId}`);
+                    span.innerHTML = `<i class="fas fa-star"></i> ${data.avg_rating.toFixed(1)}`;
+                }
+            })
+            .catch(error => {
+                console.error("Erreur lors du rafraîchissement de la moyenne :", error);
+            });
+    }
+
+    function submitRating(recipeId, ratingValue) {
+        fetch(`/rate-recipe/${recipeId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ rating: ratingValue })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const msg = document.getElementById(`rating-message-${recipeId}`);
+                msg.textContent = "Merci pour votre note !";
+                msg.style.display = "block";
+
+                // Afficher le bouton Fermer après soumission
+                document.getElementById(`close-btn-${recipeId}`).style.display = "inline-block";
+            } else {
+                alert("Erreur: " + (data.error || "inconnue"));
+            }
+        })
+        .catch(error => {
+            console.error("Erreur lors de l'envoi :", error);
+        });
+    }
+
+    // Gestion couleur étoiles
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.stars').forEach(container => {
+            const stars = container.querySelectorAll('.star');
+            let selected = 0;
+            const recipeId = container.dataset.recipe;
+
+            stars.forEach(star => {
+                const value = parseInt(star.dataset.value);
+
+                // Hover
+                star.addEventListener('mouseover', () => {
+                    stars.forEach(s => s.style.color = parseInt(s.dataset.value) <= value ? '#f39c12' : 'gray');
+                });
+
+                container.addEventListener('mouseleave', () => {
+                    stars.forEach(s => s.style.color = parseInt(s.dataset.value) <= selected ? '#f39c12' : 'gray');
+                });
+
+                // Click
+                star.addEventListener('click', () => {
+                    selected = value;
+                    submitRating(recipeId, selected);
+                });
+            });
+        });
+    });
+
+    // CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const trimmed = cookie.trim();
+                if (trimmed.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(trimmed.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    </script>
+    
+    <script>
+        //favorite
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".fav-btn").forEach(button => {
+                button.addEventListener("click", async function (event) {
+                    event.preventDefault();
+                    let recipeId = this.getAttribute("data-recipe");
+                    let icon = this.querySelector("i");
+    
+                    try {
+                        let response = await fetch(`/toggle-favorite/${recipeId}/`, {
+                            method: "POST",
+                            headers: {
+                                "X-CSRFToken": "{{ csrf_token }}",
+                                "Content-Type": "application/json"
+                            },
+                            credentials: "same-origin"
+                        });
+    
+                        if (!response.ok) throw new Error("Erreur lors de la mise à jour du favori.");
+                        let data = await response.json();
+                        icon.classList.toggle("text-danger", data.is_favorite);
+                        icon.classList.toggle("text-light", !data.is_favorite);
+                        window.location.reload();  // Cela rechargera la page actuelle
+                    } catch (error) {
+                        console.error("Erreur:", error);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+{% endblock %}

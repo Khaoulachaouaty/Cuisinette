@@ -1,0 +1,598 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<head>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+<style>
+/* Fixer l'image à gauche et permettre à la colonne droite de défiler */
+ .modal-body {
+    display: flex;
+    height: 600px; /* Hauteur de la modal */
+    overflow-y: auto;
+}
+
+/* Colonne droite (contenu textuel) */
+ .modal-body .col-md-6:last-child {
+    flex-grow: 1; /* La colonne droite prend tout l'espace restant */
+    overflow-y: auto; /* Permet à cette colonne de défiler */
+    padding-left: 20px;
+}
+
+/* Fixer l'image dans la colonne gauche */
+ .modal-body .col-md-6:first-child img {
+    width: 100%; /* Image prend toute la largeur de la colonne */
+    height: 100%; /* Image prend toute la hauteur de la colonne */
+    object-fit: cover; /* L'image s'adapte à la taille */
+}
+
+.custom-modal {
+    max-width: 70%;  /* Ajuste la largeur du modal (ex : 85% de la largeur de l'écran) */
+}
+/* Effet de survol sur la carte */
+.card:hover {
+    transform: scale(1.05); /* Légèrement augmenter la taille de la carte */
+    transition: transform 0.3s ease-in-out; /* Transition douce */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Ajouter une ombre légère */
+}
+
+/* Ajouter un effet sur l'image à l'intérieur de la carte */
+.card .card-img-top {
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Zoom de l'image lorsque la carte est survolée */
+.card:hover .card-img-top {
+    transform: scale(1); /* Zoomer légèrement l'image */
+}
+/* Amélioration du champ de saisie */
+textarea.form-control {
+        border-radius: 10px; /* Bordures arrondies pour plus de douceur */
+        padding: 10px; /* Espacement interne pour une meilleure lisibilité */
+        border: 1px solid #ccc; /* Bordure légère */
+        transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Transition pour un effet doux */
+        resize: none; /* Désactive le redimensionnement du champ */
+        background-color: #f9f9f9; /* Fond léger pour un effet plus propre */
+    }
+
+    /* Effet au focus sur le champ de saisie */
+    textarea.form-control:focus {
+        border-color: #66afe9; /* Bordure bleue au focus */
+        box-shadow: 0 0 5px rgba(102, 175, 233, 0.8); /* Ombre douce au focus */
+        outline: none; /* Retirer l'outline standard */
+    }
+
+
+
+</style> 
+</head>
+<div class="container mt-4">
+    <div class="row">
+        {% for recipe in recipes %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="position-relative" style="cursor: pointer;">
+        
+                    {% if recipe.image %}
+                    <img src="{{ recipe.image.url }}" class="card-img-top" alt="{{ recipe.title }}" 
+                        style="height: 300px; object-fit: cover;" 
+                        data-bs-toggle="modal" data-bs-target="#recipeModal{{ recipe.id }}">
+                    {% endif %}
+                    
+                    <!-- Bouton Favori en haut -->
+                    <button class="btn fav-btn position-absolute top-0 end-0 m-2" data-recipe="{{ recipe.id }}" style="background: none; border: none;">
+                        <i class="fas fa-heart {% if recipe.is_favorite %}text-danger{% else %}text-light{% endif %}" style="font-size: 1.5rem;"></i> <!-- Augmenter la taille ici -->
+                    </button>
+                    
+
+                    <div class="overlay-info p-2 text-white position-absolute bottom-0 start-0 end-0" style="background: rgba(0, 0, 0, 0.6);">
+                        <h6 class="mb-1">{{ recipe.title }}</h6>
+                        <p class="mb-1">⭐ {{ recipe.avg_rating|default:"0"|floatformat:1 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small><i class="fas fa-thumbs-up"></i> {{ recipe.likes.count }}</small> 
+                            <small class="ms-3"><i class="fas fa-comments"></i> {{ recipe.comments.count }} avis <i class="fas fa-heart"></i> {{ recipe.favorites.count }} favoris</small> 
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL STYLE INSTAGRAM -->
+        <div class="modal fade" id="recipeModal{{ recipe.id }}" tabindex="-1" aria-labelledby="recipeModalLabel{{ recipe.id }}" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered custom-modal"> <!-- Classe personnalisée -->
+                <div class="modal-content border-0 rounded-3 overflow-hidden shadow-lg">
+                    <div class="modal-body p-0 d-flex" >
+        
+        
+                <!-- Image à gauche -->
+                <div class="col-md-5 position-relative" style=" overflow: hidden;">
+                    {% if recipe.image %}
+                    <img src="{{ recipe.image.url }}" class="img-fluid w-100 h-100" style="object-fit: cover;">
+                    {% endif %}
+                    <div class="position-absolute top-0 end-0 p-2">
+                        <button class="btn fav-btn text-light" data-recipe="{{ recipe.id }}" style="background: rgba(0,0,0,0.5); border-radius: 50%;">
+                            <i class="fas fa-heart {% if recipe.is_favorite %}text-danger{% endif %}" style="font-size: 1.2rem;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Détails à droite -->
+                <div class="col-md-7 d-flex flex-column" style="overflow-y: auto;"> 
+
+                    <div class="modal-header">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer" onclick="window.location.href = '{% url 'accueil' %}';"></button>
+                    </div>
+                    
+                    <div class="p-4 flex-grow-1">
+                        <!-- Header -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="fw-bold mb-0">{{ recipe.title }}</h5>
+                            <small class="text-muted"><i class="fas fa-calendar-alt"></i> {{ recipe.created_at|date:"d M Y" }}</small>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="{% if recipe.author.profile_picture %}{{ recipe.author.profile_picture.url }}{% else %}{% static 'images/user.jpg' %}{% endif %}" alt="Avatar" class="rounded-circle me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                            <p class="text-muted large mb-0"><strong>{{ recipe.author }}</strong></p>
+                        </div>
+                        <!-- Note & Catégorie -->
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="badge bg-success me-2">{{ recipe.category }}</span>
+<!-- ⭐ Étoile moyenne visible -->
+<span class="text-warning" id="avg-rating-{{ recipe.id }}" style="cursor:pointer;" onclick="openRatingCard({{ recipe.id }})">
+    <i class="fas fa-star"></i> {{ recipe.avg_rating|default:"0"|floatformat:1 }}
+</span>
+
+<!-- 📦 Modal -->
+<div id="rating-card-{{ recipe.id }}" class="rating-card" style="display:none; position:fixed; top:30%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.3); z-index:999; width:300px; text-align:center;">
+    <h5 style="margin-bottom:15px;">Donner une note</h5>
+    
+    <div class="stars" data-recipe="{{ recipe.id }}">
+        {% for i in "12345" %}
+            <i class="fas fa-star star" 
+               data-value="{{ forloop.counter }}" 
+               style="cursor:pointer; font-size:24px; color:#ccc; margin:5px;">
+            </i>
+        {% endfor %}
+    </div>
+
+    <!-- ✅ Message de succès -->
+    <p id="rating-message-{{ recipe.id }}" style="color:green; margin-top:10px; display:none;"></p>
+
+    <!-- ❌ Bouton Fermer -->
+    <button id="close-btn-{{ recipe.id }}" style="display:none; margin-top:15px; padding:5px 15px; border:none; background:#eee; border-radius:5px; cursor:pointer;" onclick="closeRatingCard({{ recipe.id }})">Fermer</button>
+</div>                        </div>
+
+                        <!-- Description -->
+                        <h6 class="text-dark fw-semibold"><i class="fas fa-info-circle"></i> Description :</h6>
+                        <p class="small text-secondary">{{ recipe.description }}</p>
+
+                        <!-- Ingrédients -->
+                        <h6 class="text-dark fw-semibold"><i class="fas fa-utensils"></i> Ingrédients :</h6>
+                        <ul class="small text-secondary">
+                            {% for ingredient in recipe.ingredients.splitlines %}
+                                <li>{{ ingredient }}</li>
+                            {% endfor %}
+                        </ul>
+
+                        <!-- Instructions -->
+                        <h6 class="text-dark fw-semibold"><i class="fas fa-clipboard-list"></i> Instructions :</h6>
+                        <ol class="small text-secondary">
+                            {% for instruction in recipe.instructions.splitlines %}
+                                <li>{{ instruction }}</li>
+                            {% endfor %}
+                        </ol>
+
+                        <hr>
+
+                       <!-- Likes -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <button class="btn like-btn p-0 text-muted" 
+                                    data-recipe="{{ recipe.id }}" 
+                                    data-url="{% url 'toggle_like' recipe.id %}" 
+                                    style="border: none; background: none;">
+                                <i class="fas fa-thumbs-up {% if request.user in recipe.likes.all %} text-primary {% endif %}" style="font-size: 1.2rem;"></i> 
+                                <span class="like-count">{{ recipe.likes.count }}</span>
+                            </button>                    
+                            <small class="text-muted"><i class="fas fa-comments"></i> {{ recipe.comments.count }} Commentaires</small>
+                        </div>
+
+                        <hr>
+
+                        <!-- Commentaires -->
+                        <div class="comments-section" data-recipe="{{ recipe.id }}" style="max-height: 200px; overflow-y: auto;">
+                            {% for comment in recipe.comments.all %}
+                            <div class="d-flex align-items-start mb-3" id="comment-{{ comment.id }}">
+                                <img src="{% if comment.user.profile_picture %}{{ comment.user.profile_picture.url }}{% else %}{% static 'images/user.jpg' %}{% endif %}" alt="Avatar" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                <div style="flex-grow: 1;">
+                                    <strong class="d-block">{{ comment.user.username }}</strong>
+                                    <p class="mb-2" id="comment-content-{{ comment.id }}">{{ comment.content }}</p>
+                                    <small class="text-muted" style="font-size: 0.75rem;">{{ comment.created_at|date:"d M Y, H:i" }}</small>
+
+                                    {% if comment.user == request.user %}
+                                        <!-- Buttons Modifier et Supprimer avec icônes alignés à droite -->
+                                        <div class="d-flex justify-content-end mt-2">
+                                            <button class="btn btn-outline-warning btn-sm me-2" onclick="editComment({{ comment.id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" onclick="deleteComment({{ comment.id }})">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Ajouter un commentaire -->
+                        <form class="add-comment-form mt-2 d-flex" data-recipe="{{ recipe.id }}" method="POST">
+                            {% csrf_token %}
+                            <input type="text" class="form-control comment-input me-2" placeholder="Ajouter un commentaire..." required>
+                            <button class="btn btn-success add-comment-btn" type="submit">Envoyer</button>
+                        </form>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    //favorite
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".fav-btn").forEach(button => {
+            button.addEventListener("click", async function (event) {
+                event.preventDefault();
+                let recipeId = this.getAttribute("data-recipe");
+                let icon = this.querySelector("i");
+
+                try {
+                    let response = await fetch(`/toggle-favorite/${recipeId}/`, {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                            "Content-Type": "application/json"
+                        },
+                        credentials: "same-origin"
+                    });
+
+                    if (!response.ok) throw new Error("Erreur lors de la mise à jour du favori.");
+                    let data = await response.json();
+                    icon.classList.toggle("text-danger", data.is_favorite);
+                    icon.classList.toggle("text-light", !data.is_favorite);
+                    window.location.reload();  // Cela rechargera la page actuelle
+                } catch (error) {
+                    console.error("Erreur:", error);
+                }
+            });
+        });
+    });
+   </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".like-btn").forEach(button => {
+            button.addEventListener("click", function () {
+                let recipeId = this.getAttribute("data-recipe");
+                let url = this.getAttribute("data-url");
+                let icon = this.querySelector("i");
+                let likeCount = this.querySelector(".like-count");
+    
+                fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCookie("csrftoken"),
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.liked) {
+                        icon.classList.add("text-primary");  // Ajoute la couleur bleue
+                    } else {
+                        icon.classList.remove("text-primary");  // Retire la couleur bleue
+                    }
+                    likeCount.textContent = data.likes_count;
+                })
+                .catch(error => console.error("Erreur:", error));
+            });
+        });
+    
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                let cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    let cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+    
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".add-comment-form").forEach(form => {
+        form.addEventListener("submit", function (event) {
+            event.preventDefault(); // Empêche le rechargement de la page
+            
+            let recipeId = this.getAttribute("data-recipe");
+            let commentText = this.querySelector(".comment-input").value.trim();
+            let csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+            if (!commentText) {
+                alert("Le commentaire ne peut pas être vide.");
+                return;
+            }
+
+            fetch(`/add-comment/${recipeId}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrfToken,
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: `comment=${encodeURIComponent(commentText)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let commentsSection = document.querySelector(`.comments-section[data-recipe="${recipeId}"]`);
+                    commentsSection.innerHTML = ''; // Réinitialiser la section des commentaires
+
+                    data.comments.forEach(comment => {
+                        let newComment = document.createElement("div");
+                        newComment.classList.add("d-flex", "align-items-start", "mb-3", "justify-content-between");
+                        newComment.id = `comment-${comment.id}`;
+
+                        newComment.innerHTML = `
+                            <div class="d-flex">
+                                <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}{% static 'images/user.jpg' %}{% endif %}" alt="Avatar" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                <div>
+                                    <strong class="d-block">${comment.user}</strong>
+                                    <small class="text-muted">${comment.created_at}</small>
+                                    <p class="mb-0" id="comment-content-${comment.id}">${comment.content}</p>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                ${comment.user === data.currentUser ? `
+                                    <button class="btn btn-outline-warning btn-sm me-2" onclick="editComment(${comment.id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm" onclick="deleteComment(${comment.id})">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        `;
+
+                        commentsSection.appendChild(newComment);
+                    });
+
+                    // Vider le champ de saisie sans fermer le formulaire
+                    this.querySelector(".comment-input").value = "";
+                } else {
+                    alert("Erreur lors de l'ajout du commentaire.");
+                }
+            })
+            .catch(error => console.error("❌ Erreur Fetch:", error));
+        });
+    });
+});
+
+// Fonction pour modifier un commentaire
+function editComment(commentId) {
+    let commentContent = document.getElementById(`comment-content-${commentId}`);
+    let currentContent = commentContent.innerText;
+
+    // Crée un champ de saisie pour modifier le commentaire
+    commentContent.innerHTML = `
+        <textarea id="edit-text-${commentId}" class="form-control" rows="3">${currentContent}</textarea>
+        <div class="d-flex justify-content-end mt-2">
+            <button class="btn btn-success btn-sm me-2" onclick="saveComment(${commentId})">
+                <i class="fas fa-check"></i> 
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="cancelEdit(${commentId})">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+}
+
+// Fonction pour annuler l'édition
+function cancelEdit(commentId) {
+    let commentContent = document.getElementById(`comment-content-${commentId}`);
+    let originalContent = commentContent.dataset.originalContent;
+    commentContent.innerHTML = originalContent;
+}
+
+// Fonction pour sauvegarder l'édition
+function saveComment(commentId) {
+    let newContent = document.getElementById(`edit-text-${commentId}`).value.trim();
+    if (!newContent) {
+        alert("Le commentaire ne peut pas être vide.");
+        return;
+    }
+
+    let csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+    fetch(`/edit-comment/${commentId}/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: `comment=${encodeURIComponent(newContent)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let commentContent = document.getElementById(`comment-content-${commentId}`);
+            commentContent.innerHTML = newContent;  // Met à jour le commentaire affiché
+        } else {
+            alert("Erreur lors de l'édition du commentaire.");
+        }
+    })
+    .catch(error => console.error("Erreur Fetch:", error));
+}
+
+// Fonction pour supprimer un commentaire
+function deleteComment(commentId) {
+    let csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+    if (confirm("Êtes-vous sûr de vouloir supprimer ce commentaire ?")) {
+        fetch(`/delete-comment/${commentId}/`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken,
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let commentElement = document.getElementById(`comment-${commentId}`);
+                commentElement.remove();  // Supprime le commentaire de l'interface
+            } else {
+                alert("Erreur lors de la suppression du commentaire.");
+            }
+        })
+        .catch(error => console.error("Erreur Fetch:", error));
+    }
+}
+
+
+</script>
+<script>
+    function openRatingCard(recipeId) {
+        // Ouvrir le modal
+        document.getElementById(`rating-card-${recipeId}`).style.display = 'block';
+        
+        // Masquer le message précédent
+        document.getElementById(`rating-message-${recipeId}`).style.display = 'none';
+
+        // Récupérer la note précédente donnée par l'utilisateur (si elle existe)
+        fetch(`/get-user-rating/${recipeId}/`)
+            .then(response => response.json())
+            .then(data => {
+                const stars = document.querySelectorAll(`#rating-card-${recipeId} .star`);
+                if (data.rating) {
+                    stars.forEach(star => {
+                        if (parseInt(star.dataset.value) <= data.rating) {
+                            star.style.color = '#f39c12'; // Couleur des étoiles sélectionnées
+                        } else {
+                            star.style.color = '#ccc'; // Couleur des autres étoiles
+                        }
+                    });
+                } else {
+                    stars.forEach(star => {
+                        star.style.color = '#ccc'; // Par défaut les étoiles sont grises
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("Erreur lors du chargement de la note utilisateur :", error);
+            });
+    }
+
+    function closeRatingCard(recipeId) {
+        // Fermer le modal
+        document.getElementById(`rating-card-${recipeId}`).style.display = 'none';
+    
+        // Rafraîchir la moyenne mise à jour via AJAX
+        fetch(`/get-avg-rating/${recipeId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.avg_rating !== undefined) {
+                    const span = document.getElementById(`avg-rating-${recipeId}`);
+                    span.innerHTML = `<i class="fas fa-star"></i> ${data.avg_rating.toFixed(1)}`;
+                }
+            })
+            .catch(error => {
+                console.error("Erreur lors du rafraîchissement de la moyenne :", error);
+            });
+    }
+
+    function submitRating(recipeId, ratingValue) {
+        fetch(`/rate-recipe/${recipeId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ rating: ratingValue })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const msg = document.getElementById(`rating-message-${recipeId}`);
+                msg.textContent = "Merci pour votre note !";
+                msg.style.display = "block";
+
+                // Afficher le bouton Fermer après soumission
+                document.getElementById(`close-btn-${recipeId}`).style.display = "inline-block";
+            } else {
+                alert("Erreur: " + (data.error || "inconnue"));
+            }
+        })
+        .catch(error => {
+            console.error("Erreur lors de l'envoi :", error);
+        });
+    }
+
+    // Gestion couleur étoiles
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.stars').forEach(container => {
+            const stars = container.querySelectorAll('.star');
+            let selected = 0;
+            const recipeId = container.dataset.recipe;
+
+            stars.forEach(star => {
+                const value = parseInt(star.dataset.value);
+
+                // Hover
+                star.addEventListener('mouseover', () => {
+                    stars.forEach(s => s.style.color = parseInt(s.dataset.value) <= value ? '#f39c12' : 'gray');
+                });
+
+                container.addEventListener('mouseleave', () => {
+                    stars.forEach(s => s.style.color = parseInt(s.dataset.value) <= selected ? '#f39c12' : 'gray');
+                });
+
+                // Click
+                star.addEventListener('click', () => {
+                    selected = value;
+                    submitRating(recipeId, selected);
+                });
+            });
+        });
+    });
+
+    // CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const trimmed = cookie.trim();
+                if (trimmed.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(trimmed.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+
+{% endblock %}

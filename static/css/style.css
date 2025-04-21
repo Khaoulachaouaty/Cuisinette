@@ -1,0 +1,28 @@
+/* Style pour l'icône de notification */
+.notification-bell {
+    position: relative;
+    margin-right: 20px;
+}
+
+.notification-bell .fa-bell {
+    font-size: 20px;
+    color: white;
+    transition: transform 0.2s ease-in-out;
+}
+
+.notification-bell:hover .fa-bell {
+    transform: scale(1.2);
+    color: #ffcc00;
+}
+
+/* Position du badge */
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 3px 6px;
+    border-radius: 50%;
+}
+
